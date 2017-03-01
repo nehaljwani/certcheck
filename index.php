@@ -12,6 +12,7 @@
 	    var row = $(this).closest("tr");
             var fqdn = row.find("td.fqdn").text();
             var port = row.find("td.port").text();
+            var issuer = row.find("td.issuer");
             var loading = row.find("img.loading");
 	    var progress = row.find("div.progress");
 	    var progress_bar = row.find("div.progress-bar");
@@ -26,6 +27,7 @@
 		complete: function(reply) {
                     loading.hide();
                     result = $.parseJSON(reply.responseText)
+                    issuer.text(result["issuer"]["CN"]);
                     var total_time = result['validTo_time_t'] - result['validFrom_time_t'];
                     var time_spent = Math.floor(Date.now() / 1000) - result['validFrom_time_t'];
                     var percentage = Math.floor((time_spent * 100) / total_time);
@@ -61,6 +63,7 @@
           <th>#</th>
           <th>Fully Qualified Domain Name</th>
           <th>SSL Port</th>
+          <th>SSL Certificate Issuer</th>
           <th>♥ Life Spent</th>
           <th></th>
         </tr>
@@ -76,6 +79,7 @@
           <th scope="row"><?php echo ++$index ?></th>
           <td class="fqdn"><?php echo $fqdn ?></td>
           <td class="port"><?php echo $port ?></td>
+          <td class="issuer"></td>
           <td>
               <img class="loading" src="loading.gif" alt="Loading!" style="display: none"/>
               <div class="progress" style="display: none">
