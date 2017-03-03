@@ -7,9 +7,10 @@
   <script>
     var colorMap = ["#00ff40", "#00ff00", "#40ff00", "#80ff00", "#bfff00", "#ffff00", "#ffbf00", "#ff8000", "#ff4000", "#ff0000"];
 
-    var set_time_left = function(cell, date_future) {
-        setInterval(function() {
-            var delta = Math.abs(date_future - (Date.now() / 1000));
+    function set_time_left() {
+        $("tr.entries").each(function() {
+            var row = $(this);
+            var delta = Math.max(0, row.attr('valid_to') - (Date.now() / 1000));
             var days = Math.floor(delta / 86400);
             delta -= days * 86400;
             var hours = Math.floor(delta / 3600) % 24;
@@ -17,12 +18,16 @@
             var minutes = Math.floor(delta / 60) % 60;
             delta -= minutes * 60;
             var seconds = Math.floor(delta % 60);
-            cell.text(days + "d " + hours + "h " + minutes + "m " + seconds + "s");
-        }, 1000);
+            row.find("td.timeleft").text(days + "d " + hours + "h " + minutes + "m " + seconds + "s");
+        });
     }
 
-    var set_time_spent = function(progress_bar, valid_from, valid_to) {
-        setInterval(function() {
+    function set_time_spent() {
+        $("tr.entries").each(function() {
+            var row = $(this);
+            var valid_to = row.attr('valid_to');
+            var valid_from = row.attr('valid_from');
+	    var progress_bar = row.find("div.progress-bar");
             var total_time = valid_to - valid_from;
             var time_spent = Math.floor(Date.now() / 1000) - valid_from;
             var percentage = Math.floor((time_spent * 100) / total_time);
@@ -32,7 +37,14 @@
             progress_bar.css("width", percentage + "%");
             progress_bar.attr("aria-valuenow", percentage);
             progress_bar.css("background-color", colorMap[Math.floor(percentage / 10)]);
-        }, 1000);
+        });
+    }
+
+    function sort_rows() {
+        $(".table").append($(".entries").get().sort(function(a, b) {
+            var diff = parseInt($(b).find(".progress-bar").attr("aria-valuenow")) - parseInt($(a).find(".progress-bar").attr("aria-valuenow"));
+            return diff ? diff : false;
+        }));
     }
 
     $(document).ready(function() {
@@ -41,10 +53,8 @@
             var fqdn = row.find("td.fqdn").text();
             var port = row.find("td.port").text();
             var issuer = row.find("td.issuer");
-            var time_left = row.find("td.timeleft");
             var loading = row.find("img.loading");
 	    var progress = row.find("div.progress");
-	    var progress_bar = row.find("div.progress-bar");
 	    $.ajax({
 		url: '/check.php',
 		method: "POST",
@@ -57,16 +67,18 @@
                     loading.hide();
                     result = $.parseJSON(reply.responseText)
                     issuer.text(result["issuer"]["CN"]);
-                    set_time_left(time_left, result['validTo_time_t']);
-                    set_time_spent(progress_bar, result['validFrom_time_t'], result['validTo_time_t']);
+                    row.attr('valid_from', result['validFrom_time_t']);
+                    row.attr('valid_to', result['validTo_time_t']);
+                    set_time_spent();
+                    set_time_left();
+                    sort_rows();
                     progress.show();
-		    $(".table").append($(".entries").get().sort(function(a, b) {
-			var diff = parseInt($(b).find(".progress-bar").attr("aria-valuenow")) - parseInt($(a).find(".progress-bar").attr("aria-valuenow"));
-			return diff ? diff : false;
-		    }));
                 }
 	    });
         });
+        setInterval(sort_rows, 10000);
+        setInterval(set_time_spent, 10000);
+        setInterval(set_time_left, 1000);
     });
   </script>
 </head>
@@ -97,14 +109,14 @@
           $fqdn = $domain_info[0];
 	  $port = $domain_info[1];
 ?>
-          <tr class="entries">
+          <tr class="entries" valid_from="" valid_to="">
           <td class="fqdn"><?php echo $fqdn ?></td>
           <td class="port"><?php echo $port ?></td>
           <td class="issuer"></td>
           <td>
               <img class="loading" src="loading.gif" alt="Loading!" style="display: none"/>
               <div class="progress" style="display: none">
-                <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
               </div>
           </td>
           <td class="timeleft"></td>
