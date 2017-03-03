@@ -16,4 +16,4 @@ $ php -S 127.0.0.1:8080
 
 Visit [http://localhost:8080](http://localhost:8080) in your browser.
 
-![screenshot from 2017-01-09 23-52-23](https://cloud.githubusercontent.com/assets/1779189/21777930/31b617b6-d6c7-11e6-8dc5-766057fec8cf.png)
+![screenshot from 2017-03-03 11-01-06](https://cloud.githubusercontent.com/assets/1779189/23539360/cb23276a-0000-11e7-8df5-c357a0d9861b.png)
